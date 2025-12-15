@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import useDictationStore from '@/src/store/dictationStore';
-import { compareSentences } from '@/src/utils/validation';
+import { compareSentences, normalizeString } from '@/src/utils/validation';
 import { audioManager } from '@/src/utils/audio';
 
 export default function Home() {
@@ -26,19 +26,32 @@ export default function Home() {
   } = useDictationStore();
 
   const currentSentence = sentences[currentIndex] || '';
+  const originalWords = currentSentence.split(' ');
+  const [correctWords, setCorrectWords] = useState<boolean[]>([]);
 
   useEffect(() => {
     inputRef.current?.focus();
     if (currentSentence) {
       audioManager.speakText(currentSentence);
+      setCorrectWords(new Array(originalWords.length).fill(false));
     }
-  }, [currentIndex, currentSentence]);
+  }, [currentIndex, currentSentence, originalWords.length]);
 
   useEffect(() => {
     if (currentSentence && compareSentences(currentSentence, userInput)) {
       handleCorrectAnswer();
+    } else {
+      // Validate words individually
+      const userWords = userInput.split(' ');
+      const newCorrectWords = originalWords.map((originalWord, index) => {
+        if (index >= userWords.length) return false;
+        const normalizedOriginal = normalizeString(originalWord);
+        const normalizedUser = normalizeString(userWords[index]);
+        return normalizedOriginal === normalizedUser;
+      });
+      setCorrectWords(newCorrectWords);
     }
-  }, [userInput, currentSentence]);
+  }, [userInput, currentSentence, originalWords]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -112,7 +125,19 @@ export default function Home() {
 
             <div className="bg-card rounded-lg p-6 shadow-sm">
               <div className="mb-4 text-lg font-medium">
-                {currentSentence}
+                <div className="flex flex-wrap gap-1">
+                  {originalWords.map((word, index) => (
+                    <span
+                      key={index}
+                      className={`${
+                        correctWords[index] ? 'text-green-500' : 'text-foreground'
+                      } transition-colors`}
+                    >
+                      {word}
+                      {index < originalWords.length - 1 && ' '}
+                    </span>
+                  ))}
+                </div>
               </div>
               <Textarea
                 ref={inputRef}
