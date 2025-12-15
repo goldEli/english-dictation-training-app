@@ -76,7 +76,11 @@ export default function Home() {
   };
 
   const handleCorrectAnswer = () => {
-    setIsConfettiActive(true);
+    // Toggle confetti to ensure it triggers on each completion
+    setIsConfettiActive(false);
+    setTimeout(() => {
+      setIsConfettiActive(true);
+    }, 10);
     nextSentence();
   };
 

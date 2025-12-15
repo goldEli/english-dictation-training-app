@@ -116,17 +116,25 @@ export default function Confetti({
   const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Initialize confetti pieces when activated
+  // Initialize confetti pieces when activated, reset if already active
   useEffect(() => {
-    if (isActive && !isAnimating) {
-      const width = typeof window !== "undefined" ? window.innerWidth : 1000;
-      const newPieces = Array.from({ length: pieceCount }, (_, i) =>
-        createConfettiPiece(i, width)
-      );
-      setPieces(newPieces);
-      setIsAnimating(true);
+    if (isActive) {
+      // Reset animation state immediately
+      setIsAnimating(false);
+      
+      // Force re-initialization after a tiny delay
+      const timer = setTimeout(() => {
+        const width = typeof window !== "undefined" ? window.innerWidth : 1000;
+        const newPieces = Array.from({ length: pieceCount }, (_, i) =>
+          createConfettiPiece(i, width)
+        );
+        setPieces(newPieces);
+        setIsAnimating(true);
+      }, 10);
+      
+      return () => clearTimeout(timer);
     }
-  }, [isActive, isAnimating, pieceCount]);
+  }, [isActive, pieceCount]);
 
   // Animation loop
   useEffect(() => {
