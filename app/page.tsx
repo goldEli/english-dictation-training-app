@@ -98,7 +98,7 @@ export default function Home() {
     }
 
     // Prevent default for non-navigation keys
-    if (/^[a-zA-Z0-9 ]$/.test(e.key)) {
+    if (/^[a-zA-Z0-9 -]$/.test(e.key)) {
       e.preventDefault();
       audioManager.playKeypressSound();
       handleCharacterInput(e.key);
