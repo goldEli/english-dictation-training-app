@@ -1,29 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Volume2, ChevronRight, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import useDictationStore from "@/src/store/dictationStore";
-import { compareSentences, normalizeString } from "@/src/utils/validation";
+import { compareSentences } from "@/src/utils/validation";
 import { audioManager } from "@/src/utils/audio";
 import Confetti from "@/components/Confetti";
 
 export default function Home() {
   const router = useRouter();
-  const inputRef = useRef<HTMLTextAreaElement>(null);
   const dictationAreaRef = useRef<HTMLDivElement>(null);
   const [isConfettiActive, setIsConfettiActive] = useState(false);
 
   const {
     sentences,
     currentIndex,
-    userInput,
     setCurrentIndex,
     nextSentence,
-    setUserInput,
     resetUserInput,
   } = useDictationStore();
 
@@ -38,6 +33,19 @@ export default function Home() {
       return char;
     }).join('');
   };
+
+  const replayAudio = useCallback(() => {
+    audioManager.replayText(currentSentence);
+  }, [currentSentence]);
+
+  const handleCorrectAnswer = useCallback(() => {
+    // Toggle confetti to ensure it triggers on each completion
+    setIsConfettiActive(false);
+    setTimeout(() => {
+      setIsConfettiActive(true);
+    }, 10);
+    nextSentence();
+  }, [nextSentence]);
 
   const [blanks, setBlanks] = useState(generateBlanks(currentSentence));
   const [userChars, setUserChars] = useState<string[]>([]);
@@ -60,7 +68,7 @@ export default function Home() {
     if (currentSentence && compareSentences(currentSentence, userChars.join(''))) {
       handleCorrectAnswer();
     }
-  }, [userChars, currentSentence]);
+  }, [userChars, currentSentence, handleCorrectAnswer]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -72,7 +80,7 @@ export default function Home() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentSentence]);
+  }, [currentSentence, replayAudio]);
 
   // Handle keyboard input for fill-in-the-blanks
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -96,7 +104,6 @@ export default function Home() {
 
   // Handle character input
   const handleCharacterInput = (char: string) => {
-    console.log('handleCharacterInput:', char);
     setUserChars(prev => {
       const newChars = [...prev];
       // Find the first empty or non-alphanumeric position to fill
@@ -127,32 +134,26 @@ export default function Home() {
 
   // Render the current display with filled characters and remaining blanks
   const renderDisplay = () => {
+    // Find the first empty dash position (active position)
+    const activeIndex = userChars.findIndex((char, index) => char === '' && blanks[index] === '-');
+    
     return blanks.split('').map((char, index) => {
       const userChar = userChars[index] || '';
       const displayChar = userChar || char;
       const isFilled = userChar !== '';
-      console.log('isFilled:', isFilled, 'char:', char, 'userChar:', userChar, 'displayChar:', displayChar, userChars);
+      const isActive = index === activeIndex;
       
       return (
-        <span key={index} className={`inline-block w-6 text-center ${isFilled ? 'text-green-500' : 'text-foreground'}`}>
+        <span 
+          key={index} 
+          className={`inline-block w-6 text-center 
+            ${isFilled ? 'text-green-500' : 
+              isActive ? 'text-green-500 font-bold' : 'text-foreground'}`}
+        >
           {displayChar}
         </span>
       );
     });
-  };
-
-  const replayAudio = () => {
-    audioManager.replayText(currentSentence);
-  };
-
-  const handleCorrectAnswer = () => {
-    console.log('handleCorrectAnswer:', userChars);
-    // Toggle confetti to ensure it triggers on each completion
-    setIsConfettiActive(false);
-    setTimeout(() => {
-      setIsConfettiActive(true);
-    }, 10);
-    nextSentence();
   };
 
   const handleSentenceClick = (index: number) => {
