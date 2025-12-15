@@ -92,7 +92,7 @@ export default function Home() {
     }
 
     // Prevent default for non-navigation keys
-    if (/^[a-zA-Z0-9]$/.test(e.key)) {
+    if (/^[a-zA-Z0-9 ]$/.test(e.key)) {
       e.preventDefault();
       audioManager.playKeypressSound();
       handleCharacterInput(e.key);
@@ -106,9 +106,10 @@ export default function Home() {
   const handleCharacterInput = (char: string) => {
     setUserChars(prev => {
       const newChars = [...prev];
-      // Find the first empty or non-alphanumeric position to fill
+      // Find the first empty position to fill
       for (let i = 0; i < newChars.length; i++) {
-        if (blanks[i] === '-' && newChars[i] === '') {
+        if (newChars[i] === '' && 
+            (blanks[i] === '-' || (blanks[i] === ' ' && char === ' '))) {
           newChars[i] = char;
           break;
         }
