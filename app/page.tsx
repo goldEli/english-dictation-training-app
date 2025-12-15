@@ -14,6 +14,7 @@ import Confetti from "@/components/Confetti";
 export default function Home() {
   const router = useRouter();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const dictationAreaRef = useRef<HTMLDivElement>(null);
   const [isConfettiActive, setIsConfettiActive] = useState(false);
 
   const {
@@ -27,32 +28,39 @@ export default function Home() {
   } = useDictationStore();
 
   const currentSentence = sentences[currentIndex] || "";
-  const originalWords = currentSentence.split(" ");
-  const [correctWords, setCorrectWords] = useState<boolean[]>([]);
+  
+  // Generate blanks from original sentence, ignoring special characters
+  const generateBlanks = (sentence: string): string => {
+    return sentence.split('').map(char => {
+      if (/[a-zA-Z0-9]/.test(char)) {
+        return '-';
+      }
+      return char;
+    }).join('');
+  };
+
+  const [blanks, setBlanks] = useState(generateBlanks(currentSentence));
+  const [userChars, setUserChars] = useState<string[]>([]);
 
   useEffect(() => {
-    inputRef.current?.focus();
     if (currentSentence) {
       audioManager.speakText(currentSentence);
-      setCorrectWords(new Array(originalWords.length).fill(false));
+      const generatedBlanks = generateBlanks(currentSentence);
+      setBlanks(generatedBlanks);
+      setUserChars(new Array(generatedBlanks.length).fill(''));
+      
+      // Auto-focus the dictation area when sentence changes
+      setTimeout(() => {
+        dictationAreaRef.current?.focus();
+      }, 100);
     }
-  }, [currentIndex, currentSentence, originalWords.length]);
+  }, [currentIndex, currentSentence]);
 
   useEffect(() => {
-    if (currentSentence && compareSentences(currentSentence, userInput)) {
+    if (currentSentence && compareSentences(currentSentence, userChars.join(''))) {
       handleCorrectAnswer();
-    } else {
-      // Validate words individually
-      const userWords = userInput.split(" ");
-      const newCorrectWords = originalWords.map((originalWord, index) => {
-        if (index >= userWords.length) return false;
-        const normalizedOriginal = normalizeString(originalWord);
-        const normalizedUser = normalizeString(userWords[index]);
-        return normalizedOriginal === normalizedUser;
-      });
-      setCorrectWords(newCorrectWords);
     }
-  }, [userInput, currentSentence, originalWords]);
+  }, [userChars, currentSentence]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -66,9 +74,71 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentSentence]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    audioManager.playKeypressSound();
-    setUserInput(e.target.value);
+  // Handle keyboard input for fill-in-the-blanks
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Handle Cmd+R for replay
+    if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+      e.preventDefault();
+      replayAudio();
+      return;
+    }
+
+    // Prevent default for non-navigation keys
+    if (/^[a-zA-Z0-9]$/.test(e.key)) {
+      e.preventDefault();
+      audioManager.playKeypressSound();
+      handleCharacterInput(e.key);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      handleBackspace();
+    }
+  };
+
+  // Handle character input
+  const handleCharacterInput = (char: string) => {
+    console.log('handleCharacterInput:', char);
+    setUserChars(prev => {
+      const newChars = [...prev];
+      // Find the first empty or non-alphanumeric position to fill
+      for (let i = 0; i < newChars.length; i++) {
+        if (blanks[i] === '-' && newChars[i] === '') {
+          newChars[i] = char;
+          break;
+        }
+      }
+      return newChars;
+    });
+  };
+
+  // Handle backspace
+  const handleBackspace = () => {
+    setUserChars(prev => {
+      const newChars = [...prev];
+      // Find the last filled character
+      for (let i = newChars.length - 1; i >= 0; i--) {
+        if (newChars[i] !== '') {
+          newChars[i] = '';
+          break;
+        }
+      }
+      return newChars;
+    });
+  };
+
+  // Render the current display with filled characters and remaining blanks
+  const renderDisplay = () => {
+    return blanks.split('').map((char, index) => {
+      const userChar = userChars[index] || '';
+      const displayChar = userChar || char;
+      const isFilled = userChar !== '';
+      console.log('isFilled:', isFilled, 'char:', char, 'userChar:', userChar, 'displayChar:', displayChar, userChars);
+      
+      return (
+        <span key={index} className={`inline-block w-6 text-center ${isFilled ? 'text-green-500' : 'text-foreground'}`}>
+          {displayChar}
+        </span>
+      );
+    });
   };
 
   const replayAudio = () => {
@@ -90,9 +160,15 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-background text-foreground relative">
       {/* Dictation Area */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8">
+      <div 
+        ref={dictationAreaRef}
+        className="flex-1 flex flex-col items-center justify-center p-8 focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all"
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onClick={() => dictationAreaRef.current?.focus()}
+      >
         <div className="w-full max-w-2xl space-y-8">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">English Dictation Training</h1>
@@ -121,33 +197,16 @@ export default function Home() {
               </Button>
             </div>
 
-            <div className="bg-card rounded-lg p-6 shadow-sm">
-              <div className="mb-4 text-lg font-medium">
-                <div className="flex flex-wrap gap-1">
-                  {originalWords.map((word, index) => (
-                    <span
-                      key={index}
-                      className={`${
-                        correctWords[index]
-                          ? "text-green-500"
-                          : "text-foreground"
-                      } transition-colors`}
-                    >
-                      {word}
-                      {index < originalWords.length - 1 && " "}
-                    </span>
-                  ))}
+            {/* Fill-in-the-Blanks Display */}
+            <div className="bg-card rounded-lg p-8 shadow-sm">
+              <div className="text-2xl font-medium text-center space-y-4">
+                <div className="flex flex-wrap justify-center gap-1">
+                  {renderDisplay()}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Type the missing letters above
                 </div>
               </div>
-              <Textarea
-                ref={inputRef}
-                value={userInput}
-                onChange={handleInputChange}
-                placeholder="Type the sentence here..."
-                className="text-lg"
-                rows={3}
-                autoFocus
-              />
             </div>
 
             <div className="flex gap-2">
@@ -176,6 +235,16 @@ export default function Home() {
         />
       </div>
 
+      {/* Original Sentence - Fixed at Bottom */}
+      <div className="fixed bottom-0 left-0 right-80 bg-card border-t border-border p-4 shadow-lg z-10">
+        <h3 className="text-sm font-semibold text-muted-foreground mb-2">
+          Original Sentence
+        </h3>
+        <p className="text-lg font-medium">
+          {currentSentence}
+        </p>
+      </div>
+
       {/* Sentence List */}
       <div className="w-80 bg-card border-l border-border flex flex-col max-h-screen">
         <div className="p-4 border-b border-border">
@@ -192,11 +261,9 @@ export default function Home() {
                 key={index}
                 className={`
                   px-4 py-3 rounded-md cursor-pointer transition-colors
-                  ${
-                    index === currentIndex
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-secondary text-foreground"
-                  }
+                  ${index === currentIndex
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-secondary text-foreground"}
                 `}
                 onClick={() => handleSentenceClick(index)}
               >
