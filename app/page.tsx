@@ -219,15 +219,9 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground relative">
-      {/* Dictation Area */}
-      <div
-        ref={dictationAreaRef}
-        className="flex-1 flex flex-col items-center justify-center p-8 focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        onClick={() => dictationAreaRef.current?.focus()}
-      >
-        <div className="w-full space-y-8">
+      {/* Fixed Header */}
+      <header className={`fixed top-0 left-0 w-full transition-all duration-300 z-30 ${isSentencesVisible ? 'right-80' : 'right-0'}`}>
+        <div className="bg-card border-b border-border p-4 shadow-sm">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">English Dictation Training</h1>
             <div className="flex gap-2">
@@ -251,6 +245,18 @@ export default function Home() {
               )}
             </div>
           </div>
+        </div>
+      </header>
+
+      {/* Dictation Area */}
+      <div
+        ref={dictationAreaRef}
+        className="flex-1 flex flex-col items-center justify-center pt-24 pb-24 px-8 focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all"
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onClick={() => dictationAreaRef.current?.focus()}
+      >
+        <div className="w-full space-y-8">
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
