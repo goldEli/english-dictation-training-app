@@ -143,32 +143,25 @@ export default function Home() {
 
   // Render the current display with filled characters and remaining blanks
   const renderDisplay = () => {
-    // Find the first empty dash position (active position)
-    const activeIndex = userChars.findIndex(
-      (char, index) => char === "" && blanks[index] === "-"
-    );
-
-    console.log(11111111, {activeIndex, blanks, userChars})
+    // Find the first empty position overall (active position)
+    const activeIndex = userChars.findIndex(char => char === "");
 
     return blanks.split("").map((char, index) => {
       const userChar = userChars[index] || "";
       const displayChar = userChar || char;
       const isFilled = userChar !== "";
-      const isActive = index === activeIndex;
-
-     
+      // Only highlight if it's the active position AND it's a dash
+      const isActive = index === activeIndex && blanks[index] === "-";
 
       return (
         <span
           key={index}
           className={`inline-block w-6 text-center 
-            ${
-              isFilled
-                ? "text-green-500"
-                : isActive
-                ? "text-green-500 font-bold"
-                : "text-foreground"
-            }`}
+            ${isFilled
+              ? "text-green-500"
+              : isActive
+              ? "text-green-500 font-bold"
+              : "text-foreground"}`}
         >
           {displayChar}
         </span>
@@ -276,24 +269,25 @@ export default function Home() {
               No sentences available
             </div>
           ) : (
-            sentences.map((sentence, index) => (
-              <div
-                key={index}
-                className={`
-                  px-4 py-3 rounded-md cursor-pointer transition-colors
-                  ${
-                    index === currentIndex
+            sentences.map((sentence, index) => {
+              const isActive = index === currentIndex;
+              return (
+                <div
+                  key={index}
+                  className={
+                    "px-4 py-3 rounded-md cursor-pointer transition-colors " +
+                    (isActive
                       ? "bg-primary text-primary-foreground"
-                      : "hover:bg-secondary text-foreground"
+                      : "hover:bg-secondary text-foreground")
                   }
-                `}
-                onClick={() => handleSentenceClick(index)}
-              >
-                <div className="truncate whitespace-nowrap overflow-hidden">
-                  {sentence}
+                  onClick={() => handleSentenceClick(index)}
+                >
+                  <div className="truncate whitespace-nowrap overflow-hidden">
+                    {sentence}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
