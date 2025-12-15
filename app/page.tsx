@@ -23,15 +23,18 @@ export default function Home() {
   } = useDictationStore();
 
   const currentSentence = sentences[currentIndex] || "";
-  
+
   // Generate blanks from original sentence, ignoring special characters
   const generateBlanks = (sentence: string): string => {
-    return sentence.split('').map(char => {
-      if (/[a-zA-Z0-9]/.test(char)) {
-        return '-';
-      }
-      return char;
-    }).join('');
+    return sentence
+      .split("")
+      .map((char) => {
+        if (/[a-zA-Z0-9]/.test(char)) {
+          return "-";
+        }
+        return char;
+      })
+      .join("");
   };
 
   const replayAudio = useCallback(() => {
@@ -55,8 +58,8 @@ export default function Home() {
       audioManager.speakText(currentSentence);
       const generatedBlanks = generateBlanks(currentSentence);
       setBlanks(generatedBlanks);
-      setUserChars(new Array(generatedBlanks.length).fill(''));
-      
+      setUserChars(new Array(generatedBlanks.length).fill(""));
+
       // Auto-focus the dictation area when sentence changes
       setTimeout(() => {
         dictationAreaRef.current?.focus();
@@ -65,7 +68,10 @@ export default function Home() {
   }, [currentIndex, currentSentence]);
 
   useEffect(() => {
-    if (currentSentence && compareSentences(currentSentence, userChars.join(''))) {
+    if (
+      currentSentence &&
+      compareSentences(currentSentence, userChars.join(""))
+    ) {
       handleCorrectAnswer();
     }
   }, [userChars, currentSentence, handleCorrectAnswer]);
@@ -85,7 +91,7 @@ export default function Home() {
   // Handle keyboard input for fill-in-the-blanks
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Handle Cmd+R for replay
-    if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+    if ((e.metaKey || e.ctrlKey) && e.key === "r") {
       e.preventDefault();
       replayAudio();
       return;
@@ -96,7 +102,7 @@ export default function Home() {
       e.preventDefault();
       audioManager.playKeypressSound();
       handleCharacterInput(e.key);
-    } else if (e.key === 'Backspace') {
+    } else if (e.key === "Backspace") {
       e.preventDefault();
       handleBackspace();
     }
@@ -104,12 +110,14 @@ export default function Home() {
 
   // Handle character input
   const handleCharacterInput = (char: string) => {
-    setUserChars(prev => {
+    setUserChars((prev) => {
       const newChars = [...prev];
       // Find the first empty position to fill
       for (let i = 0; i < newChars.length; i++) {
-        if (newChars[i] === '' && 
-            (blanks[i] === '-' || (blanks[i] === ' ' && char === ' '))) {
+        if (
+          newChars[i] === "" &&
+          (blanks[i] === "-" || (blanks[i] === " " && char === " "))
+        ) {
           newChars[i] = char;
           break;
         }
@@ -120,12 +128,12 @@ export default function Home() {
 
   // Handle backspace
   const handleBackspace = () => {
-    setUserChars(prev => {
+    setUserChars((prev) => {
       const newChars = [...prev];
       // Find the last filled character
       for (let i = newChars.length - 1; i >= 0; i--) {
-        if (newChars[i] !== '') {
-          newChars[i] = '';
+        if (newChars[i] !== "") {
+          newChars[i] = "";
           break;
         }
       }
@@ -136,20 +144,31 @@ export default function Home() {
   // Render the current display with filled characters and remaining blanks
   const renderDisplay = () => {
     // Find the first empty dash position (active position)
-    const activeIndex = userChars.findIndex((char, index) => char === '' && blanks[index] === '-');
-    
-    return blanks.split('').map((char, index) => {
-      const userChar = userChars[index] || '';
+    const activeIndex = userChars.findIndex(
+      (char, index) => char === "" && blanks[index] === "-"
+    );
+
+    console.log(11111111, {activeIndex, blanks, userChars})
+
+    return blanks.split("").map((char, index) => {
+      const userChar = userChars[index] || "";
       const displayChar = userChar || char;
-      const isFilled = userChar !== '';
+      const isFilled = userChar !== "";
       const isActive = index === activeIndex;
-      
+
+     
+
       return (
-        <span 
-          key={index} 
+        <span
+          key={index}
           className={`inline-block w-6 text-center 
-            ${isFilled ? 'text-green-500' : 
-              isActive ? 'text-green-500 font-bold' : 'text-foreground'}`}
+            ${
+              isFilled
+                ? "text-green-500"
+                : isActive
+                ? "text-green-500 font-bold"
+                : "text-foreground"
+            }`}
         >
           {displayChar}
         </span>
@@ -165,7 +184,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen bg-background text-foreground relative">
       {/* Dictation Area */}
-      <div 
+      <div
         ref={dictationAreaRef}
         className="flex-1 flex flex-col items-center justify-center p-8 focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all"
         tabIndex={0}
@@ -243,9 +262,7 @@ export default function Home() {
         <h3 className="text-sm font-semibold text-muted-foreground mb-2">
           Original Sentence
         </h3>
-        <p className="text-lg font-medium">
-          {currentSentence}
-        </p>
+        <p className="text-lg font-medium">{currentSentence}</p>
       </div>
 
       {/* Sentence List */}
@@ -264,9 +281,11 @@ export default function Home() {
                 key={index}
                 className={`
                   px-4 py-3 rounded-md cursor-pointer transition-colors
-                  ${index === currentIndex
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-secondary text-foreground"}
+                  ${
+                    index === currentIndex
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-secondary text-foreground"
+                  }
                 `}
                 onClick={() => handleSentenceClick(index)}
               >
