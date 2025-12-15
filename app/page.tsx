@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Volume2, ChevronRight, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import useDictationStore from '@/src/store/dictationStore';
 import { compareSentences } from '@/src/utils/validation';
 import { audioManager } from '@/src/utils/audio';
 
 export default function Home() {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isConfettiActive, setIsConfettiActive] = useState(false);
   
   const {
@@ -51,7 +52,7 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentSentence]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     audioManager.playKeypressSound();
     setUserInput(e.target.value);
   };
@@ -107,13 +108,13 @@ export default function Home() {
               <div className="mb-4 text-lg font-medium">
                 {currentSentence}
               </div>
-              <Input
+              <Textarea
                 ref={inputRef}
-                type="text"
                 value={userInput}
                 onChange={handleInputChange}
                 placeholder="Type the sentence here..."
-                className="text-lg h-12"
+                className="text-lg"
+                rows={3}
                 autoFocus
               />
             </div>
@@ -168,7 +169,7 @@ export default function Home() {
       </div>
 
       {/* Sentence List */}
-      <div className="w-80 bg-card border-l border-border flex flex-col">
+      <div className="w-80 bg-card border-l border-border flex flex-col max-h-screen">
         <div className="p-4 border-b border-border">
           <h3 className="font-semibold">Sentences ({sentences.length})</h3>
         </div>
