@@ -1,20 +1,21 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { Volume2, ChevronRight, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import useDictationStore from '@/src/store/dictationStore';
-import { compareSentences, normalizeString } from '@/src/utils/validation';
-import { audioManager } from '@/src/utils/audio';
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Volume2, ChevronRight, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import useDictationStore from "@/src/store/dictationStore";
+import { compareSentences, normalizeString } from "@/src/utils/validation";
+import { audioManager } from "@/src/utils/audio";
+import Confetti from "@/components/Confetti";
 
 export default function Home() {
   const router = useRouter();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isConfettiActive, setIsConfettiActive] = useState(false);
-  
+
   const {
     sentences,
     currentIndex,
@@ -25,8 +26,8 @@ export default function Home() {
     resetUserInput,
   } = useDictationStore();
 
-  const currentSentence = sentences[currentIndex] || '';
-  const originalWords = currentSentence.split(' ');
+  const currentSentence = sentences[currentIndex] || "";
+  const originalWords = currentSentence.split(" ");
   const [correctWords, setCorrectWords] = useState<boolean[]>([]);
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function Home() {
       handleCorrectAnswer();
     } else {
       // Validate words individually
-      const userWords = userInput.split(' ');
+      const userWords = userInput.split(" ");
       const newCorrectWords = originalWords.map((originalWord, index) => {
         if (index >= userWords.length) return false;
         const normalizedOriginal = normalizeString(originalWord);
@@ -55,24 +56,15 @@ export default function Home() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "r") {
         e.preventDefault();
         replayAudio();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentSentence]);
-
-  useEffect(() => {
-    if (isConfettiActive) {
-      const timer = setTimeout(() => {
-        setIsConfettiActive(false);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [isConfettiActive]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     audioManager.playKeypressSound();
@@ -103,7 +95,7 @@ export default function Home() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => router.push('/sentences')}
+              onClick={() => router.push("/sentences")}
             >
               <Settings className="h-5 w-5" />
             </Button>
@@ -111,7 +103,9 @@ export default function Home() {
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Listen and type the sentence</h2>
+              <h2 className="text-xl font-semibold">
+                Listen and type the sentence
+              </h2>
               <Button
                 variant="default"
                 size="sm"
@@ -130,11 +124,13 @@ export default function Home() {
                     <span
                       key={index}
                       className={`${
-                        correctWords[index] ? 'text-green-500' : 'text-foreground'
+                        correctWords[index]
+                          ? "text-green-500"
+                          : "text-foreground"
                       } transition-colors`}
                     >
                       {word}
-                      {index < originalWords.length - 1 && ' '}
+                      {index < originalWords.length - 1 && " "}
                     </span>
                   ))}
                 </div>
@@ -151,17 +147,13 @@ export default function Home() {
             </div>
 
             <div className="flex gap-2">
-              <Button
-                variant="default"
-                onClick={replayAudio}
-                className="gap-2"
-              >
+              <Button variant="default" onClick={replayAudio} className="gap-2">
                 <Volume2 className="h-4 w-4" />
                 Replay Audio
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push('/sentences')}
+                onClick={() => router.push("/sentences")}
                 className="gap-2 ml-auto"
               >
                 Sentence Management
@@ -172,31 +164,12 @@ export default function Home() {
         </div>
 
         {/* Confetti Effect */}
-        {isConfettiActive && (
-          <div className="fixed inset-0 pointer-events-none">
-            {Array.from({ length: 100 }).map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-4 h-4 rounded-full"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  background: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                  animation: `fall ${3 + Math.random() * 2}s linear infinite`,
-                  animationDelay: `${Math.random() * 2}s`,
-                  transform: `translateY(-100vh) rotate(${Math.random() * 360}deg)`,
-                }}
-              />
-            ))}
-            <style jsx>{`
-              @keyframes fall {
-                to {
-                  transform: translateY(100vh) rotate(${360}deg);
-                }
-              }
-            `}</style>
-          </div>
-        )}
+        <Confetti
+          isActive={isConfettiActive}
+          onComplete={() => setIsConfettiActive(false)}
+          duration={2500}
+          pieceCount={80}
+        />
       </div>
 
       {/* Sentence List */}
@@ -215,9 +188,11 @@ export default function Home() {
                 key={index}
                 className={`
                   px-4 py-3 rounded-md cursor-pointer transition-colors
-                  ${index === currentIndex
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-secondary text-foreground'}
+                  ${
+                    index === currentIndex
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-secondary text-foreground"
+                  }
                 `}
                 onClick={() => handleSentenceClick(index)}
               >
