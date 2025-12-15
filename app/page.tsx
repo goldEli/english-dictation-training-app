@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Volume2, ChevronRight, Settings } from "lucide-react";
+import { Volume2, ChevronRight, Settings, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useDictationStore from "@/src/store/dictationStore";
 import { compareSentences } from "@/src/utils/validation";
@@ -12,7 +12,10 @@ import Confetti from "@/components/Confetti";
 export default function Home() {
   const router = useRouter();
   const dictationAreaRef = useRef<HTMLDivElement>(null);
+  const sentencesListRef = useRef<HTMLDivElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isConfettiActive, setIsConfettiActive] = useState(false);
+  const [isSentencesVisible, setIsSentencesVisible] = useState(false);
 
   const {
     sentences,
@@ -85,7 +88,13 @@ export default function Home() {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      // Clear debounce timer on component unmount
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [currentSentence, replayAudio]);
 
   // Handle keyboard input for fill-in-the-blanks
@@ -179,6 +188,35 @@ export default function Home() {
     resetUserInput();
   };
 
+  // Handle list icon hover
+  const handleListIconHover = () => {
+    setIsSentencesVisible(true);
+    // Clear any existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  };
+
+  // Handle mouse entering the sentences list
+  const handleListEnter = () => {
+    setIsSentencesVisible(true);
+    // Clear any existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  };
+
+  // Handle mouse leaving the sentences list
+  const handleListLeave = () => {
+    // Set debounce timer to hide list after 500ms
+    debounceTimerRef.current = setTimeout(() => {
+      setIsSentencesVisible(false);
+      debounceTimerRef.current = null;
+    }, 500);
+  };
+
   return (
     <div className="flex min-h-screen bg-background text-foreground relative">
       {/* Dictation Area */}
@@ -189,16 +227,29 @@ export default function Home() {
         onKeyDown={handleKeyDown}
         onClick={() => dictationAreaRef.current?.focus()}
       >
-        <div className="w-full max-w-2xl space-y-8">
+        <div className="w-full space-y-8">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">English Dictation Training</h1>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => router.push("/sentences")}
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => router.push("/sentences")}
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+              {/* List Icon Button - Show when sentences list is hidden */}
+              {!isSentencesVisible && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="transition-opacity duration-300"
+                  onMouseEnter={handleListIconHover}
+                >
+                  <List className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -256,15 +307,20 @@ export default function Home() {
       </div>
 
       {/* Original Sentence - Fixed at Bottom */}
-      <div className="fixed bottom-0 left-0 right-80 bg-card border-t border-border p-4 shadow-lg z-10">
+      <div className={`fixed bottom-0 left-0 bg-card border-t border-border p-4 shadow-lg z-10 transition-all duration-300 ${isSentencesVisible ? 'right-80' : 'right-0'}`}>
         <h3 className="text-sm font-semibold text-muted-foreground mb-2">
           Original Sentence
         </h3>
         <p className="text-lg font-medium">{currentSentence}</p>
       </div>
 
-      {/* Sentence List */}
-      <div className="w-80 bg-card border-l border-border flex flex-col max-h-screen">
+      {/* Sentence List - Hidden by default, shows on hover */}
+      <div
+        ref={sentencesListRef}
+        className={`fixed top-0 right-0 w-80 h-screen bg-card border-l border-border flex flex-col max-h-screen transition-all duration-300 ease-in-out z-20 ${isSentencesVisible ? 'transform translate-x-0 opacity-100' : 'transform translate-x-full opacity-0'}`}
+        onMouseEnter={handleListEnter}
+        onMouseLeave={handleListLeave}
+      >
         <div className="p-4 border-b border-border">
           <h3 className="font-semibold">Sentences ({sentences.length})</h3>
         </div>
