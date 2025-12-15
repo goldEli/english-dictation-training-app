@@ -13,7 +13,6 @@ export default function Home() {
   const router = useRouter();
   const dictationAreaRef = useRef<HTMLDivElement>(null);
   const sentencesListRef = useRef<HTMLDivElement>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isConfettiActive, setIsConfettiActive] = useState(false);
   const [isSentencesVisible, setIsSentencesVisible] = useState(false);
 
@@ -90,10 +89,6 @@ export default function Home() {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      // Clear debounce timer on component unmount
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
     };
   }, [currentSentence, replayAudio]);
 
@@ -191,30 +186,11 @@ export default function Home() {
   // Handle list icon hover
   const handleListIconHover = () => {
     setIsSentencesVisible(true);
-    // Clear any existing debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
   };
 
-  // Handle mouse entering the sentences list
-  const handleListEnter = () => {
-    setIsSentencesVisible(true);
-    // Clear any existing debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
-  };
-
-  // Handle mouse leaving the sentences list
-  const handleListLeave = () => {
-    // Set debounce timer to hide list after 500ms
-    debounceTimerRef.current = setTimeout(() => {
-      setIsSentencesVisible(false);
-      debounceTimerRef.current = null;
-    }, 500);
+  // Handle clicking the backdrop to close the sentences list
+  const handleBackdropClick = () => {
+    setIsSentencesVisible(false);
   };
 
   return (
@@ -320,12 +296,18 @@ export default function Home() {
         <p className="text-lg font-medium">{currentSentence}</p>
       </div>
 
+      {/* Backdrop Overlay */}
+      {isSentencesVisible && (
+        <div
+          className="fixed inset-0 bg-black/30 z-35 transition-opacity duration-300"
+          onClick={handleBackdropClick}
+        />
+      )}
+
       {/* Sentence List - Hidden by default, shows on hover */}
       <div
         ref={sentencesListRef}
-        className={`fixed top-0 right-0 w-80 h-screen bg-card border-l border-border flex flex-col max-h-screen transition-all duration-300 ease-in-out z-20 ${isSentencesVisible ? 'transform translate-x-0 opacity-100' : 'transform translate-x-full opacity-0'}`}
-        onMouseEnter={handleListEnter}
-        onMouseLeave={handleListLeave}
+        className={`fixed top-0 right-0 w-80 h-screen bg-card border-l border-border flex flex-col max-h-screen transition-all duration-300 ease-in-out z-40 ${isSentencesVisible ? 'transform translate-x-0 opacity-100' : 'transform translate-x-full opacity-0'}`}
       >
         <div className="p-4 border-b border-border">
           <h3 className="font-semibold">Sentences ({sentences.length})</h3>
