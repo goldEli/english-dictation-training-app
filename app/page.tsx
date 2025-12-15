@@ -52,6 +52,15 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentSentence]);
 
+  useEffect(() => {
+    if (isConfettiActive) {
+      const timer = setTimeout(() => {
+        setIsConfettiActive(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isConfettiActive]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     audioManager.playKeypressSound();
     setUserInput(e.target.value);
@@ -63,10 +72,7 @@ export default function Home() {
 
   const handleCorrectAnswer = () => {
     setIsConfettiActive(true);
-    setTimeout(() => {
-      setIsConfettiActive(false);
-      nextSentence();
-    }, 1500);
+    nextSentence();
   };
 
   const handleSentenceClick = (index: number) => {
