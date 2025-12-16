@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Volume2, ChevronRight, Settings, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import useDictationStore from "@/src/store/dictationStore";
 import { compareSentences } from "@/src/utils/validation";
 import { audioManager } from "@/src/utils/audio";
@@ -198,27 +199,40 @@ export default function Home() {
       {/* Fixed Header */}
       <header className={`fixed top-0 left-0 w-full transition-all duration-300 z-30 ${isSentencesVisible ? 'right-80' : 'right-0'}`}>
         <div className="bg-card border-b border-border p-4 shadow-sm">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">English Dictation Training</h1>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => router.push("/sentences")}
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-              {/* List Icon Button - Show when sentences list is hidden */}
-              {!isSentencesVisible && (
+          <div className="max-w-6xl mx-auto">
+            <div className="flex justify-between items-center mb-2">
+              <h1 className="text-3xl font-bold">English Dictation Training</h1>
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="transition-opacity duration-300"
-                  onMouseEnter={handleListIconHover}
+                  onClick={() => router.push("/sentences")}
                 >
-                  <List className="h-5 w-5" />
+                  <Settings className="h-5 w-5" />
                 </Button>
-              )}
+                {/* List Icon Button - Show when sentences list is hidden */}
+                {!isSentencesVisible && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="transition-opacity duration-300"
+                    onMouseEnter={handleListIconHover}
+                  >
+                    <List className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            {/* Progress Bar */}
+            <div className="mt-2">
+              <Progress 
+                value={sentences.length > 0 ? ((currentIndex + 1) / sentences.length) * 100 : 0} 
+                className="h-2"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>Progress</span>
+                <span>{sentences.length > 0 ? `${currentIndex + 1} / ${sentences.length}` : '0 / 0'}</span>
+              </div>
             </div>
           </div>
         </div>
