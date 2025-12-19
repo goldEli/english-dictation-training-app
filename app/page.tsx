@@ -81,6 +81,7 @@ export default function Home() {
         userChars={userChars}
         currentSentence={currentSentence}
         replayAudio={replayAudio}
+        onSkip={nextSentence}
         onCharacterInput={handleCharacterInput}
         onBackspace={handleBackspace}
         onKeyDown={handleKeyDown}

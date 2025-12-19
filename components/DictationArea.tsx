@@ -8,6 +8,7 @@ interface DictationAreaProps {
   userChars: string[];
   currentSentence: string;
   replayAudio: () => void;
+  onSkip: () => void;
   onCharacterInput: (char: string) => void;
   onBackspace: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
@@ -19,6 +20,7 @@ export const DictationArea = ({
   userChars,
   currentSentence,
   replayAudio,
+  onSkip,
   onCharacterInput,
   onBackspace,
   onKeyDown,
@@ -69,19 +71,28 @@ export const DictationArea = ({
     >
       <div className="w-full space-y-8">
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 justify-between">
             <h2 className="text-xl font-semibold">
               Listen and type the sentence
             </h2>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={replayAudio}
-              className="gap-2"
-            >
-              <Volume2 className="h-4 w-4" />
-              Listen Again (⌘+R)
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={replayAudio}
+                className="gap-2"
+              >
+                <Volume2 className="h-4 w-4" />
+                Listen Again (⌘+R)
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onSkip}
+              >
+                Skip
+              </Button>
+            </div>
           </div>
 
           {/* Fill-in-the-Blanks Display */}
