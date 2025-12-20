@@ -20,7 +20,7 @@ import { SentencesList } from "@/components/SentencesList";
 export default function Home() {
   const router = useRouter();
   const [isConfettiActive, setIsConfettiActive] = useState(false);
-  const { nextSentence } = useDictationStore();
+  const { nextSentence, favoriteSentences, toggleFavorite } = useDictationStore();
 
   // Handle correct answer with confetti effect
   const handleCorrectAnswer = useCallback(() => {
@@ -80,8 +80,10 @@ export default function Home() {
         blanks={blanks}
         userChars={userChars}
         currentSentence={currentSentence}
+        isFavorited={favoriteSentences.includes(currentSentence)}
         replayAudio={replayAudio}
         onSkip={nextSentence}
+        onToggleFavorite={toggleFavorite}
         onCharacterInput={handleCharacterInput}
         onBackspace={handleBackspace}
         onKeyDown={handleKeyDown}

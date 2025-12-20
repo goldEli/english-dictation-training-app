@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export interface DictationState {
   sentences: string[];
+  favoriteSentences: string[];
   currentIndex: number;
   userInput: string;
   setSentences: (sentences: string[]) => void;
@@ -10,11 +11,13 @@ export interface DictationState {
   updateSentence: (index: number, sentence: string) => void;
   deleteSentence: (index: number) => void;
   deleteAllSentences: () => void;
+  deleteAllExceptFavorites: () => void;
   setCurrentIndex: (index: number) => void;
   nextSentence: () => void;
   setUserInput: (input: string) => void;
   resetUserInput: () => void;
   importSentences: (sentences: string[]) => void;
+  toggleFavorite: () => void;
 }
 
 const useDictationStore = create<DictationState>()(
@@ -27,6 +30,7 @@ const useDictationStore = create<DictationState>()(
         "Peter Piper picked a peck of pickled peppers.",
         "A watched pot never boils.",
       ],
+      favoriteSentences: [],
       currentIndex: 0,
       userInput: '',
 
@@ -69,11 +73,41 @@ const useDictationStore = create<DictationState>()(
         set((state) => ({
           sentences: [...state.sentences, ...newSentences.map((s) => s.trim())],
         })),
+
+      toggleFavorite: () =>
+        set((state) => {
+          const currentSentence = state.sentences[state.currentIndex];
+          const isFavorite = state.favoriteSentences.includes(currentSentence);
+          
+          if (isFavorite) {
+            return {
+              favoriteSentences: state.favoriteSentences.filter(
+                (sentence) => sentence !== currentSentence
+              ),
+            };
+          } else {
+            return {
+              favoriteSentences: [...state.favoriteSentences, currentSentence],
+            };
+          }
+        }),
+
+      deleteAllExceptFavorites: () =>
+        set((state) => {
+          const filteredSentences = state.sentences.filter((sentence) =>
+            state.favoriteSentences.includes(sentence)
+          );
+          return {
+            sentences: filteredSentences,
+            currentIndex: Math.min(state.currentIndex, filteredSentences.length - 1),
+          };
+        }),
     }),
     {
       name: 'dictation-storage',
       partialize: (state) => ({
         sentences: state.sentences,
+        favoriteSentences: state.favoriteSentences,
         currentIndex: state.currentIndex,
       }),
     }

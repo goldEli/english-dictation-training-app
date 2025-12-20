@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
-import { Volume2 } from 'lucide-react';
+import { Volume2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DictationDisplay } from './DictationDisplay';
 
@@ -7,8 +7,10 @@ interface DictationAreaProps {
   blanks: string;
   userChars: string[];
   currentSentence: string;
+  isFavorited: boolean;
   replayAudio: () => void;
   onSkip: () => void;
+  onToggleFavorite: () => void;
   onCharacterInput: (char: string) => void;
   onBackspace: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
@@ -19,8 +21,10 @@ export const DictationArea = ({
   blanks,
   userChars,
   currentSentence,
+  isFavorited,
   replayAudio,
   onSkip,
+  onToggleFavorite,
   onCharacterInput,
   onBackspace,
   onKeyDown,
@@ -84,6 +88,15 @@ export const DictationArea = ({
               >
                 <Volume2 className="h-4 w-4" />
                 Listen Again (⌘+R)
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onToggleFavorite}
+                className={`gap-2 ${isFavorited ? 'text-red-500' : ''}`}
+              >
+                <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
+                {isFavorited ? 'Favorited' : 'Favorite'}
               </Button>
               <Button
                 variant="secondary"
